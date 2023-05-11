@@ -47,9 +47,12 @@ def create_table(csv_name, csv_data, dbname):
 
 def dump_db(path,dbname):
     db_pass = os.getenv('DB_PASSWORD')
-    subprocess.Popen(
-        'mysqldump -h localhost -P 3306 -u root -p' + db_pass + ' -B {} > '.format(dbname) + path + 'csv_database_dump_'+ datetime.today().strftime('%Y%m%d_%H%M%S') + '.sql',
+    output_name = 'csv_database_dump_'+ datetime.today().strftime('%Y%m%d_%H%M%S') + '.sql'
+    dump_process = subprocess.Popen(
+        'mysqldump -h localhost -P 3306 -u root -p' + db_pass + ' -B {} > '.format(dbname) + path + output_name,
         shell=True)
+    dump_process.wait()
+    subprocess.Popen('sed -i "s/utf8mb4_0900_ai_ci/utf8mb4_general_ci/g" {}'.format(path+output_name) , shell=True)
 
 
 if __name__ == '__main__':
@@ -67,7 +70,7 @@ if __name__ == '__main__':
         csv_files = os.listdir(input_folder)
         for csv in csv_files:
             climate_data = pd.read_csv(input_folder + '/' + csv, index_col=False,
-                                       delimiter=',')
+                                       delimiter=',',  encoding = "ISO-8859-1")
             create_table(csv, climate_data, db_name)
 
         # Creates a folder for the output SQL dump
